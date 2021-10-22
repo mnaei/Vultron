@@ -35,6 +35,8 @@ interface DssCdpManager {
         uint next;
     }
 
+    function urns(uint urnId) external returns (address);
+
     // Allow/disallow a usr address to manage the cdp.
     function cdpAllow(
         uint cdp,
