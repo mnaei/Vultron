@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity 0.8.9;
 
+// We have to be considerate of the underlying functions. Whether the vaults are paused, not paused, etc.. and build workaround
+// we also have to calculate the fee of the lending protocol
+// on our vault we have to do margin call considering the users both ETC and BTC vault
+// Consider debt celiing
+// instead of an auction system just integrate with one inch to liquidate position.
+// consider what happens when the entire vault gets margin called and dai/eth is returned
+
 import {DssCdpManager} from "./Maker/DssCdpManager.sol";
 
+interface DSSChainLog {
+
+}
 
 interface VatLike {
     function can(address, address) external view returns (uint);
@@ -49,7 +59,6 @@ contract Vultron {
     uint ETHId;
     uint BTCId;
 
-
     constructor() {
         ETHId = proxy.open(ETHA, address(this));
         BTCId = proxy.open(WBTCA, address(this));
@@ -83,34 +92,54 @@ contract Vultron {
         payable(msg.sender).transfer(amount);
     }
 
-
-    function getDaiAmount(
-        address vat,
-        address jug,
-        address urn,
-        bytes32 ilk,
-        uint wad
-    ) internal returns (int) {
-
-        int dart = 0;
-        // Updates stability fee rate
-        uint rate = JugLike(jug).drip(ilk);
-
-        // Gets DAI balance of the urn in the vat
-        uint dai = VatLike(vat).dai(urn);
-
-        // If there was already enough DAI in the vat balance, just exits it without adding more debt
-        if (dai < mul(wad, RAY)) {
-            // Calculates the needed dart so together with the existing dai in the vat is enough to exit wad amount of DAI tokens
-            dart = toInt(sub(mul(wad, RAY), dai) / rate);
-            // This is neeeded due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
-            dart = mul(uint(dart), rate) < mul(wad, RAY) ? dart + 1 : dart;
-        }
-
-        return dart;
+    function returnUnwatedToken() external {
+        
     }
 
-    function borrowDAI (uint amount) external {
+    function depositBTC () external {
+
+    }
+
+    function withdrawBTC () external {
+
+    }
+
+
+    function borrowDAI () external {
+
+    }
+
+
+    function paybackDAI () external {
+
+    }
+
+    function delinquite() public view {
+        
+    }
+    function marginCall() external {
+        
+        // transfer user vault to be auctioned off
+    }
+
+    function balance() public {
+        
+    }
+
+    function intreset() external {
+
+        // To add our fees, we can use the same system maker dao is using, which is to increase the debt, 
+            // and then subtract their debt to our own and thats how we get our fees. 
+            // We would still have to call the drip function every once a while to collect the fees
+        // We would have to integrate with one inch to liquidate our position. 
+                
+    }
+
+    function exit() external {
+        
+    }
+
+    function makerExit() external {
 
     }
 
