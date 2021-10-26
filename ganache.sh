@@ -1,0 +1,1 @@
+ganache-cli --fork https://mainnet.infura.io/v3/a08e5f8b49304f8e8796e339820c72d0 -i 5777 --mnemonic “movie caution hold bread vibrant angry report pact bomb ring depart provide”

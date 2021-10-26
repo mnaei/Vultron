@@ -7,6 +7,7 @@ pragma solidity 0.8.9;
 // Consider debt celiing
 // instead of an auction system just integrate with one inch to liquidate position.
 // consider what happens when the entire vault gets margin called and dai/eth is returned
+// if a user vault is delinquite then we can provide very low margin to the maker vault and see it is auctioned by maker. If they are below their margin call amount then we send less to the auction to cover our losses 
 
 import {DssCdpManager} from "./Maker/DssCdpManager.sol";
 
@@ -40,6 +41,12 @@ interface GemJoinLike {
     function exit(address, uint) external;
 }
 
+interface DaiJoinLike {
+    function dai() external returns (GemLike);
+    function join(address, uint) external payable;
+    function exit(address, uint) external;
+}
+
 contract Vultron {
 
     function toInt(uint x) internal pure returns (int y) {
@@ -47,10 +54,15 @@ contract Vultron {
         require(y >= 0, "int-overflow");
     }
 
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x, "mul-overflow");
+    }
+
     DssCdpManager   proxy = DssCdpManager(0x5ef30b9986345249bc32d8928B7ee64DE9435E39);
     GemLike   WETH = GemLike(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     GemJoinLike JoinETH = GemJoinLike(0x2F0b23f53734252Bda2277357e97e1517d6B042A);
     VatLike Vat = VatLike(0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B);
+    DaiJoinLike daiJoin = DaiJoinLike(0x9759A6Ac90977b93B58547b4A71c78317f391A28);
 
     bytes32 ETHA = 0x4554482d41000000000000000000000000000000000000000000000000000000;
     bytes32 WBTCA = 0x574254432d410000000000000000000000000000000000000000000000000000;
@@ -104,8 +116,22 @@ contract Vultron {
 
     }
 
+    function toRad(uint wad) internal pure returns (uint rad) {
+        rad = mul(wad, 10 ** 27);
+    }
 
-    function borrowDAI () external {
+    function borrowDAI(uint amount) external {
+        
+        // Generates debt in the CDP
+        proxy.frob(ETHId, 0, int(amount));
+        // Moves the DAI amount (balance in the vat in rad) to proxy's address
+        proxy.move(ETHId, address(this), toRad(amount));
+        // // Allows adapter to access to proxy's DAI balance in the vat
+        if (Vat.can(address(this), address(daiJoin)) == 0) {
+            Vat.hope(address(daiJoin));
+        }
+        // Exits DAI to the user's wallet as a token
+        daiJoin.exit(msg.sender, amount);
 
     }
 
