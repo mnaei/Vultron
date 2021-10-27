@@ -39,6 +39,10 @@ interface DssCdpManager {
 
     function ilks(uint ilkId) external returns (bytes32);
 
+    function owns(uint CDPId) external returns (address);
+
+    function cdpCan(address owner, uint CDPId, address idk) external returns (uint);
+
     // Allow/disallow a usr address to manage the cdp.
     function cdpAllow(
         uint cdp,

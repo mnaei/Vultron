@@ -135,9 +135,39 @@ contract Vultron {
 
     }
 
+    function daiJoin_join( address urn, uint wad) public {
+        // Gets DAI from the user's wallet
+        daiJoin.dai().transferFrom(msg.sender, address(this), wad);
+        // Approves adapter to take the DAI amount
+        daiJoin.dai().approve(address(daiJoin), wad);
+        // Joins DAI into the vat
+        daiJoin.join(urn, wad);
+    }
 
-    function paybackDAI () external {
+    function paybackDAI (uint amount) external {
 
+        address urn = proxy.urns(ETHId);
+        bytes32 ilk = proxy.ilks(ETHId);
+
+        address own = proxy.owns(ETHId);
+        if (own == address(this) || proxy.cdpCan(own, ETHId, address(this)) == 1) {
+            // Joins DAI amount into the vat
+            daiJoin_join(urn, amount);
+            // Paybacks debt to the CDP
+            proxy.frob( ETHId, 0, -int(amount));
+        } else {
+             // Joins DAI amount into the vat
+            daiJoin_join(address(this), amount);
+            // Paybacks debt to the CDP
+            Vat.frob(
+                ilk,
+                urn,
+                address(this),
+                address(this),
+                0,
+                -int(amount)
+            );
+        }
     }
 
     function delinquite() public view {
